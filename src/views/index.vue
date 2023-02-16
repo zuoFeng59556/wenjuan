@@ -97,8 +97,8 @@ function check() {
 
 @media screen and (min-width: 0px) and (max-width: 760px) {
   .content {
-    /* box-sizing: border-box; */
-    /* padding: 60px 30px 20px 30px; */
+    box-sizing: border-box;
+    padding: 60px 30px 20px 30px;
     max-width: 760px;
     background-color: #fff;
   }
