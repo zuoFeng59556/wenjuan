@@ -6,8 +6,8 @@ import { Cloud } from "laf-client-sdk";
 const data = ref({});
 
 const cloud = new Cloud({
-  baseUrl: "http://t9a12z.dev.laf.run", // 这里的pcsw70需要换成自己的APPID
-  getAccessToken: () => "", // 这里暂时用不到先为空
+  baseUrl: "http://t9a12z.dev.laf.run",
+  getAccessToken: () => "",
 });
 
 getData();
