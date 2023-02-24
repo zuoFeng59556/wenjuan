@@ -1,0 +1,6 @@
+{
+  "i18n-ally.localesPaths": [
+    "src/uni_modules/uni-table/i18n",
+    "src/uni_modules/uni-datetime-picker/components/uni-datetime-picker/i18n"
+  ]
+}
