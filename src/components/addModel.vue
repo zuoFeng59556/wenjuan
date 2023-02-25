@@ -1,6 +1,7 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch, reactive, watchEffect } from "vue";
 import { ElMessage } from "element-plus";
+
 // ===============================data===============================
 const name = ref("");
 const type = ref("");
@@ -24,6 +25,35 @@ const necessary = ref(false);
 
 const selectName = ref("");
 const emits = defineEmits(["ok", "cancel"]);
+
+const props = defineProps({
+  data: {
+    type: Object,
+    default: {},
+  },
+});
+
+// ===============================watch===============================
+watch(
+  () => props.data,
+  (val) => {
+    console.log("里面接收的", val);
+    name.value = val.questionName;
+    type.value = val.type;
+    selectName.value = val.type;
+    necessary.value = val.necessary;
+    if (val.type === "checkbox" || val.type === "Radio") {
+      optionList.value = JSON.parse(JSON.stringify(val.answer));
+      showOption.value = true;
+    } else {
+      optionList.value = [];
+      showOption.value = false;
+    }
+  },
+  {
+    immediate: true,
+  }
+);
 // ===============================function===============================
 function selectChange(val) {
   type.value = val;
@@ -32,7 +62,10 @@ function selectChange(val) {
 }
 
 function addOption() {
+  console.log(props.data.answer);
+
   optionList.value.push({ name: "" });
+  console.log(props.data.answer);
 }
 
 function delOption(index) {
@@ -72,7 +105,7 @@ function check() {
     return false;
   }
   if (type.value === "checkbox" || type.value === "Radio") {
-    if (!optionList.value[0].name) {
+    if (!optionList.value[0]?.name) {
       ElMessage.error("至少提供一个选项");
       return false;
     }
@@ -82,6 +115,23 @@ function check() {
 
 function cancel() {
   emits("cancel");
+  if (props.data) {
+    // 如果是编辑状态，取消就恢复原来的数据
+    name.value = props.data.questionName;
+    type.value = props.data.type;
+    selectName.value = props.data.type;
+    necessary.value = props.data.necessary;
+    console.log("props.data", props.data.answer);
+    if (props.data.type === "checkbox" || props.data.type === "Radio") {
+      optionList.value = JSON.parse(JSON.stringify(props.data.answer));
+      showOption.value = true;
+    } else {
+      optionList.value = [];
+      showOption.value = false;
+    }
+    return;
+  }
+
   // 清空数据
   name.value = "";
   type.value = "";
@@ -94,7 +144,7 @@ function cancel() {
 <template>
   <div class="addModel">
     <div class="itemName">问题名字</div>
-    <el-input v-model="name" placeholder="输入名字" />
+    <el-input class="input" v-model="name" placeholder="输入名字" />
     <div class="itemName">问题类型</div>
     <el-select v-model="selectName" @change="selectChange" placeholder="选择类型">
       <el-option
@@ -126,7 +176,7 @@ function cancel() {
   margin: 5px 0 5px 0;
 }
 .add-option {
-  margin: 10px 0 0 180px;
+  margin: 10px 0 0 60%;
   font-size: 14px;
   color: #909399;
   cursor: pointer;

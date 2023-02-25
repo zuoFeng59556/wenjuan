@@ -1,99 +1,37 @@
 <script setup>
 import { ref } from "vue";
 import addModel from "../../components/addModel.vue";
+import menuList from "../../components/menuList.vue";
+import { cloud } from "../../laf/index.js";
 
 // ===============================data===============================
-const showAddModel = ref(false);
-const AData = ref([
-  {
-    title: "sealos 商务咨询",
-    text:
-      "sealos 是一个基于 kubernetes 内核的云操作系统，我们提供企业级产品与服务，欢迎咨询，填写下面表单我们将与您联系！",
-    questions: [
-      {
-        questionName: "姓名",
-        type: "input",
-        answer: "王大锤",
-        necessary: true,
-      },
-      {
-        questionName: "对 sealos 的需求是？",
-        type: "checkbox",
-        answer: [
-          {
-            name: "在公有云上使用 sealos",
-            isOption: false,
-          },
-          {
-            name: "希望私有化输出，私有化部署",
-            isOption: true,
-          },
-        ],
-        necessary: true,
-      },
-    ],
-  },
-  {
-    title: "sealos 商务咨询",
-    text:
-      "sealos 是一个基于 kubernetes 内核的云操作系统，我们提供企业级产品与服务，欢迎咨询，填写下面表单我们将与您联系！",
-    questions: [
-      {
-        questionName: "姓名",
-        type: "input",
-        answer: "王小锤",
-        necessary: true,
-      },
-      {
-        questionName: "对 sealos 的需求是？",
-        type: "checkbox",
-        answer: [
-          {
-            name: "在公有云上使用 sealos",
-            isOption: true,
-          },
-          {
-            name: "希望私有化输出，私有化部署",
-            isOption: false,
-          },
-        ],
-        necessary: true,
-      },
-    ],
-  },
-]);
+const QData = ref({}); // 问题列表
+const AData = ref([]); // 答案列表
+const showAddModel = ref(false); // 添加问题弹窗
+const dialogTableVisible = ref(false); // 编辑表单弹窗
+const tempTitle = ref(""); // 编辑表单标题
+const tempText = ref(""); // 编辑表单简介
+const addModelData = ref({}); // 添加和编辑问题 弹窗数据
+const currentEditIndex = ref(); // 当前编辑的问题索引
+const addModelTitle = ref("添加问题"); // 添加问题弹窗标题
 
-const QData = ref({
-  title: "sealos 商务咨询",
-  text:
-    "sealos 是一个基于 kubernetes 内核的云操作系统，我们提供企业级产品与服务，欢迎咨询，填写下面表单我们将与您联系！",
-  questions: [
-    {
-      questionName: "姓名",
-      type: "input",
-      answer: "",
-      necessary: true,
-    },
-    {
-      questionName: "对 sealos 的需求是？",
-      type: "checkbox",
-      answer: [
-        {
-          name: "在公有云上使用 sealos",
-          isOption: false,
-        },
-        {
-          name: "希望私有化输出，私有化部署",
-          isOption: false,
-        },
-      ],
-      necessary: true,
-    },
-  ],
-});
+// ===============================methods===============================
 
-// ===============================function===============================
+// 获取表单数据
+async function getDataById(id) {
+  const res = await cloud.invoke("get-data", { id });
+  QData.value = res.question;
+  QData.value.id = QData.value._id;
+  delete QData.value._id;
 
+  AData.value = res.answer;
+  AData.value.forEach((item) => {
+    item.id = item._id;
+    delete item._id;
+  });
+}
+
+// 过滤答案
 function filterAnswer(answer, type) {
   if (type === "input") return answer;
   if (type === "checkbox") {
@@ -104,100 +42,195 @@ function filterAnswer(answer, type) {
   }
 }
 
+// 打开添加问题面板
 function addQuestion() {
+  addModelTitle.value = "添加问题";
+  showAddModel.value = true;
+  addModelData.value = {};
+}
+
+// 添加问题
+async function okAddQuestion(obj) {
+  if (addModelTitle.value === "添加问题") {
+    QData.value.questions.push(obj);
+  } else {
+    QData.value.questions[currentEditIndex.value] = obj;
+  }
+  showAddModel.value = false;
+  await cloud.invoke("edit-question", QData.value);
+  getDataById(QData.value.id);
+}
+
+// 取消添加问题
+function cancelAddQuestion() {
+  showAddModel.value = false;
+}
+
+// 打开编辑表单面板
+function edit() {
+  dialogTableVisible.value = true;
+  tempTitle.value = QData.value.title;
+  tempText.value = QData.value.text;
+}
+
+// 取消编辑表单
+function cancelEdit() {
+  dialogTableVisible.value = false;
+  tempTitle.value = "";
+  tempText.value = "";
+}
+
+// 编辑表单提交
+async function okEdit() {
+  QData.value.title = tempTitle.value;
+  QData.value.text = tempText.value;
+
+  await cloud.invoke("edit-question", QData.value);
+  getDataById(QData.value.id);
+
+  dialogTableVisible.value = false;
+  tempTitle.value = "";
+  tempText.value = "";
+}
+
+// 编辑问题
+function editQuestion(index) {
+  currentEditIndex.value = index;
+  addModelData.value = QData.value.questions[index];
+
+  addModelTitle.value = "编辑问题";
   showAddModel.value = true;
 }
 
-function ok(obj) {
-  QData.value.questions.push(obj);
-  showAddModel.value = false;
-}
+// 删除问题 以及 答案
+async function delQuestion(index) {
+  console.log(AData.value);
+  QData.value.questions.splice(index, 1);
+  await cloud.invoke("edit-question", QData.value);
 
-function cancel() {
-  showAddModel.value = false;
+  AData.value.forEach((item) => {
+    item.questions.splice(index, 1);
+  });
+  await cloud.invoke("del-answer", { index, id: QData.value.id });
 }
 </script>
 
 <template>
   <div style="display: flex">
-    <addModel v-show="showAddModel" @ok="ok" @cancel="cancel" />
+    <menuList @changeId="getDataById" :current-name="QData.title" />
 
-    <div class="left">
-      <div class="left-item">表单的名字</div>
-      <div class="add-item">+添加一个表单</div>
+    <div class="tableBox">
+      <div class="titleBox">
+        <div class="title">{{ QData.title }}</div>
+        <el-button class="editButton" @click="edit" type="primary" round size="small"
+          >编辑</el-button
+        >
+      </div>
+      <div class="text">{{ QData.text }}</div>
+
+      <uni-table style="width: 100%" border stripe emptyText="暂无更多数据">
+        <!-- 表头行 -->
+        <uni-tr>
+          <uni-th
+            v-for="(item, index) in QData.questions"
+            align="center"
+            style="cursor: pointer"
+          >
+            <div>{{ item.questionName }}</div>
+            <div style="padding: 0 0 0 30px">
+              <div
+                style="font-size: 12px; font-weight: 500; color: #409eff"
+                @click="editQuestion(index)"
+              >
+                编辑
+              </div>
+              <div
+                @click="delQuestion(index)"
+                style="font-size: 12px; font-weight: 500; color: #f56c6c"
+              >
+                删除
+              </div>
+            </div>
+          </uni-th>
+
+          <uni-th align="center">
+            <el-button @click="addQuestion" type="primary" round size="small"
+              >+添加</el-button
+            >
+          </uni-th>
+        </uni-tr>
+        <!-- 表格数据行 -->
+        <uni-tr v-for="item in AData">
+          <uni-td v-for="QItem in item.questions">
+            <div v-if="QItem.type === 'input'">
+              {{ filterAnswer(QItem.answer, QItem.type) }}
+            </div>
+            <div
+              v-if="QItem.type === 'checkbox'"
+              v-for="AItem in filterAnswer(QItem.answer, QItem.type)"
+            >
+              {{ AItem.name }}
+            </div>
+          </uni-td>
+        </uni-tr>
+      </uni-table>
     </div>
 
-    <uni-table
-      style="width: 80%; margin: 8% 0 0 5%"
-      border
-      stripe
-      emptyText="暂无更多数据"
-    >
-      <!-- 表头行 -->
-      <uni-tr>
-        <uni-th v-for="item in QData.questions" align="center">
-          {{ item.questionName }}
-        </uni-th>
-        <uni-th align="center">
-          <img class="addImg" @click="addQuestion" src="../../static/add.png" alt="" />
-        </uni-th>
-      </uni-tr>
-      <!-- 表格数据行 -->
-      <uni-tr v-for="item in AData">
-        <uni-td v-for="QItem in item.questions">
-          <div v-if="QItem.type === 'input'">
-            {{ filterAnswer(QItem.answer, QItem.type) }}
-          </div>
-          <div
-            v-if="QItem.type === 'checkbox'"
-            v-for="AItem in filterAnswer(QItem.answer, QItem.type)"
-          >
-            {{ AItem.name }}
-          </div>
-        </uni-td>
-      </uni-tr>
-    </uni-table>
+    <!--  编辑表单名字和简介 -->
+    <el-dialog v-model="dialogTableVisible" title="编辑">
+      <div class="dialog-title">标题</div>
+      <el-input v-model="tempTitle" placeholder="请输入标题" />
+      <div class="dialog-text">简介</div>
+      <el-input v-model="tempText" :rows="2" type="textarea" placeholder="请输入简介" />
+      <div class="dialog-footer">
+        <el-button @click="cancelEdit">取 消</el-button>
+        <el-button type="primary" @click="okEdit">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog width="20%" v-model="showAddModel" :title="addModelTitle">
+      <addModel
+        v-show="showAddModel"
+        @ok="okAddQuestion"
+        @cancel="cancelAddQuestion"
+        :data="addModelData"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <style lang="less">
-.left {
-  width: 150px;
-  height: 100vh;
-  background-color: #fff;
-  .left-item {
+.tableBox {
+  width: 80%;
+  margin: 5% 0 0 5%;
+  .titleBox {
+    display: flex;
+    justify-content: center;
+    .title {
+      text-align: center;
+      color: #333;
+      font-size: 22px;
+      font-weight: 500;
+    }
+    .editButton {
+      margin-left: 20px;
+    }
+  }
+  .text {
+    margin: 20px 0 20px 0;
+    text-align: center;
+    color: #666;
     font-size: 14px;
-    height: 50px;
-    line-height: 50px;
-    text-align: center;
-    border-bottom: 1px solid #e8e8e8;
-    cursor: pointer;
-  }
-  .add-item {
-    font-size: 13px;
-    height: 50px;
-    line-height: 50px;
-    text-align: center;
-    cursor: pointer;
-    font-weight: bold;
-    color: #909399;
   }
 }
-.addModel {
-  position: absolute;
-  left: 700px;
-  top: 50px;
-  z-index: 99;
-  width: 336px;
-  background: #fff;
-  box-shadow: 5px 5px 10px #888888;
-  padding: 24px;
-  box-sizing: border-box;
-  border-radius: 4px;
+
+.dialog-title {
+  margin: 0 0 10px 0;
 }
-.addImg {
-  width: 34px;
-  height: 34px;
-  cursor: pointer;
+.dialog-text {
+  margin: 10px 0 10px 0;
+}
+.dialog-footer {
+  margin: 10px 0 0 0;
 }
 </style>
