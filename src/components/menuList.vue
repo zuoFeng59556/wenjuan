@@ -6,12 +6,12 @@ import { Delete } from "@element-plus/icons-vue";
 // ===============================data===============================
 const list = ref([]); // 左侧菜单列表
 const currentId = ref(""); // 当前选中的表单id
-const emits = defineEmits(["changeId"]);
 
 const dialogTableVisible = ref(false); // 新建表单弹窗
 const questionName = ref(""); // 表单标题
 const textarea = ref(""); // 表单简介
 
+const emits = defineEmits(["changeId"]);
 const props = defineProps({
   currentName: {
     type: String,
@@ -73,13 +73,14 @@ async function ok() {
   textarea.value = "";
 }
 
-//
+// 取消新建表单
 function cancel() {
   dialogTableVisible.value = false;
   questionName.value = "";
   textarea.value = "";
 }
 
+// 删除表单项
 async function delQuestion() {
   await cloud.invoke("del-list", { id: currentId.value });
   getList(false);
@@ -98,7 +99,14 @@ async function delQuestion() {
       </span>
       <el-popconfirm @confirm="delQuestion" title="确定删除此表单?">
         <template #reference>
-          <el-button class="delButton" type="danger" :icon="Delete" size="small" circle />
+          <el-button
+            v-show="currentId === item._id"
+            class="delButton"
+            type="danger"
+            :icon="Delete"
+            size="small"
+            circle
+          />
         </template>
       </el-popconfirm>
     </div>
