@@ -5,12 +5,12 @@ import menuList from "../../components/menuList.vue";
 import { cloud } from "../../laf/index.js";
 
 // ===============================data===============================
-const QData = ref({}); // 问题列表
-const AData = ref([]); // 答案列表
-const showAddModel = ref(false); // 添加问题弹窗
+const questionData = ref({}); // 问题列表
+const answerData = ref([]); // 答案列表
 const dialogTableVisible = ref(false); // 编辑表单弹窗
 const tempTitle = ref(""); // 编辑表单标题
 const tempText = ref(""); // 编辑表单简介
+const showAddModel = ref(false); // 添加问题弹窗
 const addModelData = ref({}); // 添加和编辑问题 弹窗数据
 const currentEditIndex = ref(); // 当前编辑的问题索引
 const addModelTitle = ref("添加问题"); // 添加问题弹窗标题
@@ -20,12 +20,13 @@ const addModelTitle = ref("添加问题"); // 添加问题弹窗标题
 // 获取表单数据
 async function getDataById(id) {
   const res = await cloud.invoke("get-data", { id });
-  QData.value = res.question;
-  QData.value.id = QData.value._id;
-  delete QData.value._id;
 
-  AData.value = res.answer;
-  AData.value.forEach((item) => {
+  questionData.value = res.question;
+  questionData.value.id = questionData.value._id;
+  delete questionData.value._id;
+
+  answerData.value = res.answer;
+  answerData.value.forEach((item) => {
     item.id = item._id;
     delete item._id;
   });
@@ -34,6 +35,7 @@ async function getDataById(id) {
 // 过滤答案
 function filterAnswer(answer, type) {
   if (type === "input") return answer;
+
   if (type === "checkbox") {
     const tempList = answer.filter((item) => {
       return item.isOption;
@@ -42,7 +44,7 @@ function filterAnswer(answer, type) {
   }
 }
 
-// 打开添加问题面板
+// 打开 添加问题面板
 function addQuestion() {
   addModelTitle.value = "添加问题";
   showAddModel.value = true;
@@ -52,13 +54,13 @@ function addQuestion() {
 // 添加问题
 async function okAddQuestion(obj) {
   if (addModelTitle.value === "添加问题") {
-    QData.value.questions.push(obj);
+    questionData.value.questions.push(obj);
   } else {
-    QData.value.questions[currentEditIndex.value] = obj;
+    questionData.value.questions[currentEditIndex.value] = obj;
   }
   showAddModel.value = false;
-  await cloud.invoke("edit-question", QData.value);
-  getDataById(QData.value.id);
+  await cloud.invoke("edit-question", questionData.value);
+  getDataById(questionData.value.id);
 }
 
 // 取消添加问题
@@ -69,8 +71,8 @@ function cancelAddQuestion() {
 // 打开编辑表单面板
 function edit() {
   dialogTableVisible.value = true;
-  tempTitle.value = QData.value.title;
-  tempText.value = QData.value.text;
+  tempTitle.value = questionData.value.title;
+  tempText.value = questionData.value.text;
 }
 
 // 取消编辑表单
@@ -82,21 +84,21 @@ function cancelEdit() {
 
 // 编辑表单提交
 async function okEdit() {
-  QData.value.title = tempTitle.value;
-  QData.value.text = tempText.value;
+  questionData.value.title = tempTitle.value;
+  questionData.value.text = tempText.value;
 
-  await cloud.invoke("edit-question", QData.value);
-  getDataById(QData.value.id);
+  await cloud.invoke("edit-question", questionData.value);
+  getDataById(questionData.value.id);
 
   dialogTableVisible.value = false;
   tempTitle.value = "";
   tempText.value = "";
 }
 
-// 编辑问题
+// 打开编辑问题面板
 function editQuestion(index) {
   currentEditIndex.value = index;
-  addModelData.value = QData.value.questions[index];
+  addModelData.value = questionData.value.questions[index];
 
   addModelTitle.value = "编辑问题";
   showAddModel.value = true;
@@ -104,45 +106,45 @@ function editQuestion(index) {
 
 // 删除问题 以及 答案
 async function delQuestion(index) {
-  console.log(AData.value);
-  QData.value.questions.splice(index, 1);
-  await cloud.invoke("edit-question", QData.value);
+  questionData.value.questions.splice(index, 1);
+  await cloud.invoke("edit-question", questionData.value);
 
-  AData.value.forEach((item) => {
+  answerData.value.forEach((item) => {
     item.questions.splice(index, 1);
   });
-  await cloud.invoke("del-answer", { index, id: QData.value.id });
+  await cloud.invoke("del-answer", { index, id: questionData.value.id });
 }
 
+// 跳转预览页面
 function preview() {
   uni.navigateTo({
-    url: "/pages/form/index?id=" + QData.value.id,
+    url: "/pages/form/index?id=" + questionData.value.id,
   });
 }
 </script>
 
 <template>
   <div style="display: flex">
-    <menuList @changeId="getDataById" :current-name="QData.title" />
+    <!-- 左菜单列表  -->
+    <menuList @changeId="getDataById" :current-name="questionData.title" />
 
     <div class="tableBox">
       <div class="titleBox">
-        <div class="title">{{ QData.title }}</div>
+        <div class="title">{{ questionData.title }}</div>
         <el-button class="editButton" @click="edit" type="primary" round size="small"
           >编辑</el-button
         >
-
         <el-button class="editButton" @click="preview" type="success" round size="small"
           >预览</el-button
         >
       </div>
-      <div class="text">{{ QData.text }}</div>
+      <div class="text">{{ questionData.text }}</div>
 
       <uni-table style="width: 100%" border stripe emptyText="暂无更多数据">
         <!-- 表头行 -->
         <uni-tr>
           <uni-th
-            v-for="(item, index) in QData.questions"
+            v-for="(item, index) in questionData.questions"
             align="center"
             style="cursor: pointer"
           >
@@ -171,7 +173,7 @@ function preview() {
           </uni-th>
         </uni-tr>
         <!-- 表格数据行 -->
-        <uni-tr v-for="item in AData">
+        <uni-tr v-for="item in answerData">
           <uni-td v-for="QItem in item.questions">
             <div v-if="QItem.type === 'input'">
               {{ filterAnswer(QItem.answer, QItem.type) }}
@@ -199,6 +201,7 @@ function preview() {
       </div>
     </el-dialog>
 
+    <!--  添加问题 -->
     <el-dialog width="20%" v-model="showAddModel" :title="addModelTitle">
       <addModel
         v-show="showAddModel"

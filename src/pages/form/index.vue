@@ -4,25 +4,30 @@ import { onLoad } from "@dcloudio/uni-app";
 import { ElMessage } from "element-plus";
 import { cloud } from "../../laf/index.js";
 
+// ===============================data===============================
+const data = ref({});
+const id = ref("");
+
+// ===============================methods===============================
 onLoad((option) => {
   id.value = option.id;
   getData();
 });
 
-const data = ref({});
-const id = ref("");
-
+// 获取表单数据
 async function getData() {
   const res = await cloud.invoke("get-data", { id: id.value });
   data.value = res.question;
 }
 
+// 提交
 async function submit() {
   if (!check()) return;
   const res = await cloud.invoke("add-answer", data.value);
   if (res.ok) ElMessage.success("提交成功");
 }
 
+// 校验
 function check() {
   let isOK = true;
 
@@ -30,11 +35,11 @@ function check() {
     if (item.necessary && typeof item.answer === "string" && !item.answer) {
       isOK = false;
       ElMessage.error("请填写" + data.value.questions[index].questionName);
-      return true;
+      return true; // return true 会跳出循环
     }
 
     if (item.necessary && typeof item.answer === "object") {
-      let temp = true;
+      let temp = true; // 用来判断是否有选中的选项
       item.answer.forEach((an) => {
         if (an.isOption) {
           temp = false;
@@ -44,7 +49,7 @@ function check() {
       if (temp) {
         isOK = false;
         ElMessage.error("请选择" + data.value.questions[index].questionName);
-        return true;
+        return true; // return true 会跳出循环
       }
     }
   });

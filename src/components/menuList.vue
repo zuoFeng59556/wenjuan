@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import { cloud } from "../laf/index.js";
 import { Delete } from "@element-plus/icons-vue";
+import { onShow } from "@dcloudio/uni-app";
 
 // ===============================data===============================
 const list = ref([]); // 左侧菜单列表
@@ -31,7 +32,9 @@ watch(
   }
 );
 // ===============================methods===============================
-getList(false);
+onShow(() => {
+  getList(false);
+});
 
 // 获取表单列表
 async function getList(isEnd) {

@@ -1,11 +1,14 @@
 <script setup>
-import { ref, watch, reactive, watchEffect } from "vue";
+import { ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 
 // ===============================data===============================
-const name = ref("");
-const type = ref("");
-const showOption = ref(false);
+const name = ref(""); // 问题名
+const type = ref(""); // 问题类型
+const showOption = ref(false); // 是否显示选项
+const optionList = ref([{ name: "" }]); // 选项列表
+const necessary = ref(false); // 是否必填
+const selectType = ref(""); // 选中的问题类型
 const options = [
   {
     value: "input",
@@ -20,12 +23,8 @@ const options = [
     label: "单选",
   },
 ];
-const optionList = ref([{ name: "" }]);
-const necessary = ref(false);
 
-const selectName = ref("");
 const emits = defineEmits(["ok", "cancel"]);
-
 const props = defineProps({
   data: {
     type: Object,
@@ -37,17 +36,10 @@ const props = defineProps({
 watch(
   () => props.data,
   (val) => {
-    console.log("里面接收的", val);
-    name.value = val.questionName;
-    type.value = val.type;
-    selectName.value = val.type;
-    necessary.value = val.necessary;
-    if (val.type === "checkbox" || val.type === "Radio") {
-      optionList.value = JSON.parse(JSON.stringify(val.answer));
-      showOption.value = true;
+    if (val.questionName) {
+      initData();
     } else {
-      optionList.value = [];
-      showOption.value = false;
+      clearData();
     }
   },
   {
@@ -55,23 +47,34 @@ watch(
   }
 );
 // ===============================function===============================
-function selectChange(val) {
-  type.value = val;
+
+// 初始化数据
+function initData() {
+  console.log("chufalo");
+  name.value = props.data.questionName;
+  type.value = props.data.type;
+  selectType.value = props.data.type;
+  necessary.value = props.data.necessary;
+  if (props.data.type === "checkbox" || props.data.type === "Radio") {
+    optionList.value = JSON.parse(JSON.stringify(props.data.answer));
+    showOption.value = true;
+  } else {
+    optionList.value = [];
+    showOption.value = false;
+  }
+}
+
+// 清空数据
+function clearData() {
+  name.value = "";
+  type.value = "";
+  necessary.value = false;
+  optionList.value = [{ name: "" }];
+  selectType.value = "";
   showOption.value = false;
-  if (val === "checkbox" || val === "Radio") showOption.value = true;
 }
 
-function addOption() {
-  console.log(props.data.answer);
-
-  optionList.value.push({ name: "" });
-  console.log(props.data.answer);
-}
-
-function delOption(index) {
-  optionList.value.splice(index, 1);
-}
-
+// 确定添加
 function ok() {
   if (!check()) return;
 
@@ -88,13 +91,10 @@ function ok() {
 
   emits("ok", obj);
 
-  name.value = "";
-  type.value = "";
-  necessary.value = false;
-  optionList.value = [{ name: "" }];
-  selectName.value = "";
+  clearData();
 }
 
+// 校验
 function check() {
   if (!name.value) {
     ElMessage.error("请输入问题名");
@@ -113,31 +113,35 @@ function check() {
   return true;
 }
 
+// 取消
 function cancel() {
   emits("cancel");
+
+  // 如果是编辑状态，取消就恢复原来的数据
   if (props.data) {
-    // 如果是编辑状态，取消就恢复原来的数据
-    name.value = props.data.questionName;
-    type.value = props.data.type;
-    selectName.value = props.data.type;
-    necessary.value = props.data.necessary;
-    console.log("props.data", props.data.answer);
-    if (props.data.type === "checkbox" || props.data.type === "Radio") {
-      optionList.value = JSON.parse(JSON.stringify(props.data.answer));
-      showOption.value = true;
-    } else {
-      optionList.value = [];
-      showOption.value = false;
-    }
+    initData();
     return;
   }
 
-  // 清空数据
-  name.value = "";
-  type.value = "";
-  necessary.value = false;
-  optionList.value = [{ name: "" }];
-  selectName.value = "";
+  // 如果是新增状态，取消就清空数据
+  clearData();
+}
+
+// 选择问题类型
+function selectChange(val) {
+  type.value = val;
+  showOption.value = false;
+  if (val === "checkbox" || val === "Radio") showOption.value = true;
+}
+
+// 添加选项
+function addOption() {
+  optionList.value.push({ name: "" });
+}
+
+// 删除选项
+function delOption(index) {
+  optionList.value.splice(index, 1);
 }
 </script>
 
@@ -146,7 +150,7 @@ function cancel() {
     <div class="itemName">问题名字</div>
     <el-input class="input" v-model="name" placeholder="输入名字" />
     <div class="itemName">问题类型</div>
-    <el-select v-model="selectName" @change="selectChange" placeholder="选择类型">
+    <el-select v-model="selectType" @change="selectChange" placeholder="选择类型">
       <el-option
         v-for="item in options"
         :key="item.value"
