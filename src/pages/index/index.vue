@@ -34,9 +34,10 @@ async function getDataById(id) {
 
 // 过滤答案
 function filterAnswer(answer, type) {
-  if (type === "input") return answer;
+  // 这里新添加类型的时候  注意在 html 中添加对应的标签
+  if (type === "input" || type === "textarea") return answer;
 
-  if (type === "checkbox") {
+  if (type === "checkbox" || type === "radio" || type === "select") {
     const tempList = answer.filter((item) => {
       return item.isOption;
     });
@@ -175,11 +176,15 @@ function preview() {
         <!-- 表格数据行 -->
         <uni-tr v-for="item in answerData">
           <uni-td v-for="QItem in item.questions">
-            <div v-if="QItem.type === 'input'">
+            <div v-if="QItem.type === 'input' || QItem.type === 'textarea'">
               {{ filterAnswer(QItem.answer, QItem.type) }}
             </div>
             <div
-              v-if="QItem.type === 'checkbox'"
+              v-if="
+                QItem.type === 'checkbox' ||
+                QItem.type === 'radio' ||
+                QItem.type === 'select'
+              "
               v-for="AItem in filterAnswer(QItem.answer, QItem.type)"
             >
               {{ AItem.name }}

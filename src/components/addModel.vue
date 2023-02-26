@@ -19,8 +19,16 @@ const options = [
     label: "多选",
   },
   {
-    value: "Radio",
+    value: "radio",
     label: "单选",
+  },
+  {
+    value: "textarea",
+    label: "文本域",
+  },
+  {
+    value: "select",
+    label: "下拉框",
   },
 ];
 
@@ -50,12 +58,15 @@ watch(
 
 // 初始化数据
 function initData() {
-  console.log("chufalo");
   name.value = props.data.questionName;
   type.value = props.data.type;
   selectType.value = props.data.type;
   necessary.value = props.data.necessary;
-  if (props.data.type === "checkbox" || props.data.type === "Radio") {
+  if (
+    props.data.type === "checkbox" ||
+    props.data.type === "radio" ||
+    props.data.type === "select"
+  ) {
     optionList.value = JSON.parse(JSON.stringify(props.data.answer));
     showOption.value = true;
   } else {
@@ -82,7 +93,7 @@ function ok() {
   obj.questionName = name.value;
   obj.type = type.value;
   obj.necessary = necessary.value;
-  if (obj.type === "checkbox" || obj.type === "Radio") {
+  if (obj.type === "checkbox" || obj.type === "radio" || obj.type === "select") {
     optionList.value.forEach((item) => {
       item.isOption = false;
     });
@@ -104,7 +115,7 @@ function check() {
     ElMessage.error("请选择问题类型");
     return false;
   }
-  if (type.value === "checkbox" || type.value === "Radio") {
+  if (type.value === "checkbox" || type.value === "radio" || type.value === "select") {
     if (!optionList.value[0]?.name) {
       ElMessage.error("至少提供一个选项");
       return false;
@@ -131,7 +142,7 @@ function cancel() {
 function selectChange(val) {
   type.value = val;
   showOption.value = false;
-  if (val === "checkbox" || val === "Radio") showOption.value = true;
+  if (val === "checkbox" || val === "radio" || val === "select") showOption.value = true;
 }
 
 // 添加选项

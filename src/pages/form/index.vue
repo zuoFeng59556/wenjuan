@@ -18,11 +18,21 @@ onLoad((option) => {
 async function getData() {
   const res = await cloud.invoke("get-data", { id: id.value });
   data.value = res.question;
+  data.value.questions.forEach((item) => {
+    // 给下拉框回显用
+    item.selectValue = "";
+  });
 }
 
 // 提交
 async function submit() {
   if (!check()) return;
+
+  data.value.questions.forEach((item) => {
+    // 删除无用数据
+    delete item.selectValue;
+  });
+
   const res = await cloud.invoke("add-answer", data.value);
   if (res.ok) ElMessage.success("提交成功");
 }
@@ -56,6 +66,27 @@ function check() {
 
   return isOK;
 }
+
+function RadioChange(index, opIndex) {
+  data.value.questions[index].answer.forEach((item, ItemIndex) => {
+    if (ItemIndex === opIndex) {
+      item.isOption = true;
+    } else {
+      item.isOption = false;
+    }
+  });
+}
+
+// 下拉框选中
+function selectChange(index, opIndex) {
+  data.value.questions[index].answer.forEach((item, ItemIndex) => {
+    if (ItemIndex === opIndex) {
+      item.isOption = true;
+    } else {
+      item.isOption = false;
+    }
+  });
+}
 </script>
 
 <template>
@@ -64,6 +95,7 @@ function check() {
     <div class="detail">{{ data.text }}</div>
 
     <div class="questionBox" v-for="(item, index) in data.questions">
+      <!-- 输入框 -->
       <div class="input" v-if="item.type === 'input'">
         <div class="question">
           <span v-if="item.necessary" style="color: #ff6d56">*</span
@@ -72,6 +104,16 @@ function check() {
         <el-input v-model="item.answer" placeholder="请输入" />
       </div>
 
+      <!-- 文本域 -->
+      <div class="input" v-if="item.type === 'textarea'">
+        <div class="question">
+          <span v-if="item.necessary" style="color: #ff6d56">*</span
+          >{{ index + 1 + "." + item.questionName }}
+        </div>
+        <el-input v-model="item.answer" :rows="5" type="textarea" placeholder="请输入" />
+      </div>
+
+      <!-- 多选 -->
       <div class="checkbox" v-if="item.type === 'checkbox'">
         <div class="question">
           <span v-if="item.necessary" style="color: #ff6d56">*</span>
@@ -80,6 +122,44 @@ function check() {
         <div class="option" v-for="op in item.answer">
           <el-checkbox v-model="op.isOption" :label="op.name" size="large" />
         </div>
+      </div>
+
+      <!-- 单选 -->
+      <div class="checkbox" v-if="item.type === 'radio'">
+        <div class="question">
+          <span v-if="item.necessary" style="color: #ff6d56">*</span>
+          {{ index + 1 + "." + item.questionName }}
+        </div>
+        <div class="option" v-for="(op, opIndex) in item.answer">
+          <el-checkbox
+            @change="RadioChange(index, opIndex)"
+            v-model="op.isOption"
+            :label="op.name"
+            size="large"
+          />
+        </div>
+      </div>
+
+      <!-- 下拉框 -->
+      <div class="checkbox" v-if="item.type === 'select'">
+        <div class="question">
+          <span v-if="item.necessary" style="color: #ff6d56">*</span>
+          {{ index + 1 + "." + item.questionName }}
+        </div>
+
+        <el-select v-model="item.selectValue" placeholder="请选择">
+          <el-option
+            v-for="(op, opIndex) in item.answer"
+            @click="selectChange(index, opIndex)"
+            :key="op.name"
+            :label="op.name"
+            :value="op.name"
+          />
+        </el-select>
+
+        <!-- <div class="option" v-for="op in item.answer">
+          <el-checkbox v-model="op.isOption" :label="op.name" size="large" />
+        </div> -->
       </div>
     </div>
 
