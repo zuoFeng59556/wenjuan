@@ -9,6 +9,7 @@ const showOption = ref(false); // 是否显示选项
 const optionList = ref([{ name: "" }]); // 选项列表
 const necessary = ref(false); // 是否必填
 const selectType = ref(""); // 选中的问题类型
+const showDel = ref(false); // 是否显示删除按钮
 const options = [
   {
     value: "input",
@@ -32,7 +33,7 @@ const options = [
   },
 ];
 
-const emits = defineEmits(["ok", "cancel"]);
+const emits = defineEmits(["ok", "cancel", "delete"]);
 const props = defineProps({
   data: {
     type: Object,
@@ -62,6 +63,8 @@ function initData() {
   type.value = props.data.type;
   selectType.value = props.data.type;
   necessary.value = props.data.necessary;
+  showDel.value = true;
+
   if (
     props.data.type === "checkbox" ||
     props.data.type === "radio" ||
@@ -83,6 +86,7 @@ function clearData() {
   optionList.value = [{ name: "" }];
   selectType.value = "";
   showOption.value = false;
+  showDel.value = false;
 }
 
 // 确定添加
@@ -98,6 +102,10 @@ function ok() {
       item.isOption = false;
     });
     obj.answer = optionList.value;
+  }
+
+  if (obj.type === "input") {
+    obj.answer = "";
   }
 
   emits("ok", obj);
@@ -154,6 +162,11 @@ function addOption() {
 function delOption(index) {
   optionList.value.splice(index, 1);
 }
+
+// 删除问题
+function del() {
+  emits("delete");
+}
 </script>
 
 <template>
@@ -180,6 +193,11 @@ function delOption(index) {
     </div>
     <el-button @click="cancel">取消</el-button>
     <el-button @click="ok" type="primary">确定</el-button>
+    <el-popconfirm @confirm="del" title="确定删除此问题?">
+      <template #reference>
+        <el-button v-if="showDel" type="danger">删除</el-button>
+      </template>
+    </el-popconfirm>
   </div>
 </template>
 

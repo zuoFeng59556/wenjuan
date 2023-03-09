@@ -106,7 +106,8 @@ function editQuestion(index) {
 }
 
 // 删除问题 以及 答案
-async function delQuestion(index) {
+async function delQuestion() {
+  const index = currentEditIndex.value;
   questionData.value.questions.splice(index, 1);
   await cloud.invoke("edit-question", questionData.value);
 
@@ -114,6 +115,8 @@ async function delQuestion(index) {
     item.questions.splice(index, 1);
   });
   await cloud.invoke("del-answer", { index, id: questionData.value.id });
+
+  showAddModel.value = false;
 }
 
 // 跳转预览页面
@@ -146,25 +149,11 @@ function preview() {
         <uni-tr>
           <uni-th
             v-for="(item, index) in questionData.questions"
+            @click="editQuestion(index)"
             align="center"
             style="cursor: pointer"
           >
             <div>{{ item.questionName }}</div>
-            <div style="padding: 0 0 0 30px">
-              <div
-                style="font-size: 12px; font-weight: 500; color: #409eff"
-                @click="editQuestion(index)"
-              >
-                编辑
-              </div>
-              <el-popconfirm @confirm="delQuestion(index)" title="确定删除此问题?">
-                <template #reference>
-                  <div style="font-size: 12px; font-weight: 500; color: #f56c6c">
-                    删除
-                  </div>
-                </template>
-              </el-popconfirm>
-            </div>
           </uni-th>
 
           <uni-th align="center">
@@ -212,6 +201,7 @@ function preview() {
         v-show="showAddModel"
         @ok="okAddQuestion"
         @cancel="cancelAddQuestion"
+        @delete="delQuestion"
         :data="addModelData"
       />
     </el-dialog>
