@@ -1,6 +1,6 @@
 import * as fs from 'file-saver'
 import * as XLSX from 'xlsx'
-export default (json, fields, filename = '测试数据.xlsx') => {
+export default (json, fields, filename) => {
   json.forEach(item => {
     for (let i in item) {
       if (fields.hasOwnProperty(i)) {
