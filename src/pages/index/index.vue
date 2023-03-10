@@ -3,7 +3,7 @@ import { ref } from "vue";
 import addModel from "../../components/addModel.vue";
 import menuList from "../../components/menuList.vue";
 import { cloud } from "../../laf/index.js";
-
+import Export from "./export.js";
 // ===============================data===============================
 const questionData = ref({}); // 问题列表
 const answerData = ref([]); // 答案列表
@@ -119,6 +119,32 @@ async function delQuestion() {
   showAddModel.value = false;
 }
 
+// 导出表单数据
+function ExportExcel() {
+  const fields = {};
+  const exportData = [];
+  const excelTitle = questionData.value.title;
+  questionData.value.questions.forEach((item, index) => {
+    fields[index] = item.questionName;
+  });
+
+  answerData.value.forEach((item) => {
+    const temp = {};
+    item.questions.forEach((item2, index) => {
+      const answer = filterAnswer(item2.answer, item2.type);
+      if (typeof answer === "string") {
+        temp[index] = answer;
+      }
+      if (typeof answer === "object") {
+        temp[index] = answer.map((item3) => item3.name).join("。");
+      }
+    });
+    exportData.push(temp);
+  });
+
+  Export(exportData, fields, excelTitle);
+}
+
 // 跳转预览页面
 function preview() {
   uni.navigateTo({
@@ -140,6 +166,14 @@ function preview() {
         >
         <el-button class="editButton" @click="preview" type="success" round size="small"
           >预览</el-button
+        >
+        <el-button
+          class="editButton"
+          @click="ExportExcel"
+          type="success"
+          round
+          size="small"
+          >导出</el-button
         >
       </div>
       <div class="text">{{ questionData.text }}</div>
